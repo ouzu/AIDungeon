@@ -34,8 +34,17 @@ class GPT2Generator:
             hparams.override_from_dict(json.load(f))
         seed = np.random.randint(0, 100000)
 
-        config = tf.compat.v1.ConfigProto()
-        config.gpu_options.allow_growth = True
+        if tf.compat.v1.test.is_gpu_available():
+            config = tf.compat.v1.ConfigProto()
+            config.gpu_options.allow_growth = True
+        else:
+            import multiprocessing
+            config=tf.ConfigProto(
+                device_count={ "CPU": multiprocessing.cpu_count() },
+                inter_op_parallelism_threads=multiprocessing.cpu_count(),
+                intra_op_parallelism_threads=1,
+            )
+
         self.sess = tf.compat.v1.Session(config=config)
 
         self.context = tf.placeholder(tf.int32, [self.batch_size, None])
